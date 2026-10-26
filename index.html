@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live World Clocks</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; min-height: 100%; background: #000; color: #fff; }
+  body {
+    font-family: "Baskerville", "Times New Roman", serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; overflow-x: auto;
+  }
+  .world-clock {
+    width: 100%;
+    min-width: 1500px;
+    padding: 28px 42px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: start;
+    gap: 34px;
+  }
+  .clock-card { min-width: 0; text-align: center; }
+  .face-wrap { width: 100%; aspect-ratio: 1; position: relative; }
+  .face {
+    position: absolute; inset: 0;
+    border: 2px solid #f5f5f5; border-radius: 50%;
+    box-shadow: inset 0 0 0 5px #000, inset 0 0 0 7px #bdbdbd;
+  }
+  .face::before {
+    content: ""; position: absolute; inset: 5.4%;
+    border: 1px solid rgba(255,255,255,.78); border-radius: 50%;
+  }
+  .tick {
+    position: absolute; left: 50%; top: 7.4%;
+    width: 1px; height: 3.2%; background: rgba(255,255,255,.72);
+    transform-origin: 50% 13.9%;
+  }
+  .tick.major { width: 2px; height: 4.6%; background: #fff; }
+  .numeral {
+    position: absolute;
+    width: 1.8em;
+    margin: 0;
+    font-size: clamp(12px, 1.8vw, 32px);
+    line-height: 1;
+    text-align: center;
+    color: #fff;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 0 6px rgba(255,255,255,.12);
+  }
+  .hand {
+    position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%;
+    border-radius: 999px; background: #fff; z-index: 3;
+  }
+  .hour { width: 3.1%; height: 25%; margin-left: -1.55%; }
+  .minute { width: 1.8%; height: 35%; margin-left: -.9%; }
+  .second { width: 1px; height: 39%; margin-left: -.5px; background: #d8d8d8; }
+  .pin {
+    position: absolute; z-index: 5; width: 5.5%; aspect-ratio: 1;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    border-radius: 50%; background: #fff; border: 2px solid #000;
+  }
+  .city {
+    margin-top: clamp(14px, 1.6vw, 30px);
+    font-size: clamp(13px, 1.55vw, 29px); font-weight: 500;
+    letter-spacing: .055em; line-height: 1.15; white-space: nowrap;
+  }
+  .zone {
+    margin-top: 7px; font-family: Arial, sans-serif;
+    font-size: clamp(10px, .85vw, 16px); letter-spacing: .19em;
+    color: #cfcfcf; text-transform: uppercase;
+  }
+  @media (min-width: 1500px) {
+    .world-clock { min-width: 0; max-width: 2400px; gap: 42px; padding: 36px 54px; }
+  }
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100%;
+  background: #000;
+  overflow-x: hidden;
+}
+.clock-page-center {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.clock-scale {
+  flex: 0 0 auto;
+  width: max-content;
+  transform: scale(0.65);
+  transform-origin: top center;
+  margin: 0;
+}
+
+</style>
+</head>
+<body><div class="clock-page-center"><div class="clock-scale">
+<main class="world-clock" aria-label="Live analog world clocks">
+  <section class="clock-card" data-zone="America/New_York" data-city="WASHINGTON DC" data-zone-label="WASHINGTON TIME">
+    <div class="face-wrap"><div class="face"></div></div><div class="city">WASHINGTON DC</div><div class="zone">LOCAL TIME</div>
+  </section>
+  <section class="clock-card" data-zone="Asia/Shanghai" data-city="BEIJING" data-zone-label="CHINA STANDARD TIME">
+    <div class="face-wrap"><div class="face"></div></div><div class="city">BEIJING</div><div class="zone">LOCAL TIME</div>
+  </section>
+  <section class="clock-card" data-zone="Asia/Taipei" data-city="TAIPEI" data-zone-label="TAIWAN TIME">
+    <div class="face-wrap"><div class="face"></div></div><div class="city">TAIPEI</div><div class="zone">LOCAL TIME</div>
+  </section>
+  <section class="clock-card" data-zone="Pacific/Honolulu" data-city="HONOLULU" data-zone-label="HAWAII-ALEUTIAN STANDARD TIME">
+    <div class="face-wrap"><div class="face"></div></div><div class="city">HONOLULU</div><div class="zone">LOCAL TIME</div>
+  </section>
+  <section class="clock-card" data-zone="Europe/London" data-city="LONDON" data-zone-label="LONDON TIME">
+    <div class="face-wrap"><div class="face"></div></div><div class="city">LONDON</div><div class="zone">LOCAL TIME</div>
+  </section>
+</main>
+<script>
+(function () {
+  const cards = [...document.querySelectorAll('.clock-card')];
+  for (const card of cards) {
+    const face = card.querySelector('.face');
+    // Omit tick marks entirely to prevent the star/asterisk artifact.
+    for (let n = 1; n <= 12; n++) {
+      const num = document.createElement('span');
+      num.className = 'numeral';
+      num.textContent = n;
+      const angle = n * 30;
+      // Position each numeral radially around the face: 12 at top, 3 at right, etc.
+      const radians = angle * Math.PI / 180;
+      num.style.left = `${50 + Math.sin(radians) * 36}%`;
+      num.style.top = `${50 - Math.cos(radians) * 36}%`;
+      face.appendChild(num);
+    }
+    for (const type of ['hour', 'minute', 'second']) {
+      const hand = document.createElement('span');
+      hand.className = 'hand ' + type;
+      hand.dataset.hand = type;
+      face.appendChild(hand);
+    }
+    const pin = document.createElement('span'); pin.className = 'pin'; face.appendChild(pin);
+  }
+
+  function update() {
+    const now = new Date();
+    for (const card of cards) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: card.dataset.zone, hour: '2-digit', minute: '2-digit',
+        second: '2-digit', hourCycle: 'h23'
+      }).formatToParts(now);
+      const val = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      const h = Number(val.hour) % 12, m = Number(val.minute), s = Number(val.second);
+      card.querySelector('[data-hand="hour"]').style.transform = `rotate(${h * 30 + m * .5}deg)`;
+      card.querySelector('[data-hand="minute"]').style.transform = `rotate(${m * 6 + s * .1}deg)`;
+      card.querySelector('[data-hand="second"]').style.transform = `rotate(${s * 6}deg)`;
+      const zoneLabel = new Intl.DateTimeFormat('en-US', {
+        timeZone: card.dataset.zone, timeZoneName: 'short'
+      }).formatToParts(now).find(p => p.type === 'timeZoneName')?.value || 'LOCAL TIME';
+      card.querySelector('.zone').textContent = zoneLabel.toUpperCase();
+      card.setAttribute('aria-label', `${card.dataset.city}, ${val.hour}:${val.minute}:${val.second} ${zoneLabel}`);
+    }
+    setTimeout(update, 100);
+  }
+  update();
+})();
+</script>
+</div></div></body>
+</html>
